@@ -1,6 +1,9 @@
 package server;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.ServerSocket;
 import java.net.Socket;
 
@@ -12,7 +15,7 @@ public class Server {
     ServerSocket serverSocket;
 
     public Server(int port) {
-
+        this.port = port;
     }
 
     public Server() {
@@ -29,18 +32,18 @@ public class Server {
         System.out.println("HTTP server running on " + server.getPort());
         System.out.println("Server have not started yet. Waiting for being started.");
 
-        server.start();
         System.out.println("HTTP server listening on " + server.getPort());
+        server.start();
     }
 
     public void start() {
-        try  {
+        try {
             serverSocket = new ServerSocket(port);
             while (true) {
                 try {
                     final Socket requestSocket = serverSocket.accept();
                     System.out.println("Got new request from " + requestSocket.getInetAddress() + ":" + requestSocket.getPort());
-                    processRequest(requestSocket);
+                    showContent(getRequestContent(requestSocket));
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
@@ -56,8 +59,31 @@ public class Server {
         }
     }
 
-    public void processRequest(Socket requestSocket) {
+    public String getRequestContent(Socket requestSocket) {
+        String content = new String("");
 
+        // read request content
+        try (InputStream inputStream = requestSocket.getInputStream()) {
+            while (inputStream.available() == 0)
+                Thread.sleep(100);  // wait until got content
+
+            BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
+
+            while (reader.ready()) {
+                content += reader.readLine() + "\r\n";
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        return content;
+    }
+
+    public static void showContent(String content){
+        System.out.println("----------content----------");
+        System.out.println(content);
+        System.out.println("----------------------------");
     }
 
     public int getPort() {
