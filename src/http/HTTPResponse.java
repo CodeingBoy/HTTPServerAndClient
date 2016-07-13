@@ -1,8 +1,6 @@
 package http;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
 import java.net.Socket;
 
 /**
@@ -20,7 +18,14 @@ public class HTTPResponse {
         this.responseCode = responseCode;
         this.responseCodeDescription = responseCodeDescription;
         this.contentType = contentType;
-        this.stream = stream;
+        if (stream != null)
+            this.stream = stream;
+        else
+            try {
+                this.stream = new FileInputStream(new File("root\\404.html"));
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            }
     }
 
     public InputStream getStream() {
@@ -39,7 +44,7 @@ public class HTTPResponse {
             OutputStream outputStream = socket.getOutputStream();
             outputStream.write(getHeader().getBytes());
 
-            while (stream != null && stream.available() != 0)
+            while (stream.available() != 0)
                 outputStream.write(stream.read());
 
             outputStream.flush();
