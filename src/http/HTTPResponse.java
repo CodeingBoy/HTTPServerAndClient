@@ -18,18 +18,7 @@ public class HTTPResponse {
         this.responseCode = responseCode;
         this.responseCodeDescription = responseCodeDescription;
         this.contentType = contentType;
-        if (content != null)
             this.content = content;
-        else
-            try {
-                FileInputStream inputStream = new FileInputStream(new File("root\\404.html"));
-                content = new byte[inputStream.available()];
-                inputStream.read(content);
-            } catch (FileNotFoundException e) {
-                e.printStackTrace();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
     }
 
     // public static HTTPResponse parse(String content){
