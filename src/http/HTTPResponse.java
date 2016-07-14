@@ -11,26 +11,32 @@ public class HTTPResponse {
     private int responseCode;
     private String responseCodeDescription;
     private String contentType;
-    private InputStream stream;
+    private byte[] content;
 
-    public HTTPResponse(String httpVersion, int responseCode, String responseCodeDescription, String contentType, InputStream stream) {
+    public HTTPResponse(String httpVersion, int responseCode, String responseCodeDescription, String contentType, byte[] content) {
         this.httpVersion = httpVersion;
         this.responseCode = responseCode;
         this.responseCodeDescription = responseCodeDescription;
         this.contentType = contentType;
-        if (stream != null)
-            this.stream = stream;
+        if (content != null)
+            this.content = content;
         else
             try {
-                this.stream = new FileInputStream(new File("root\\404.html"));
+                FileInputStream inputStream = new FileInputStream(new File("root\\404.html"));
+                content = new byte[inputStream.available()];
+                inputStream.read(content);
             } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
                 e.printStackTrace();
             }
     }
 
-    public InputStream getStream() {
-        return stream;
-    }
+    // public static HTTPResponse parse(String content){
+    //     String[] lines = content.split("\r\n");
+    //     String[] firstLine = lines[0].split(" ");
+    //     return new HTTPResponse(firstLine[2],firstLine[0],firstLine[1],)
+    // }
 
     public String getHeader() {
         final StringBuffer sb = new StringBuffer();
@@ -43,9 +49,7 @@ public class HTTPResponse {
         try {
             OutputStream outputStream = socket.getOutputStream();
             outputStream.write(getHeader().getBytes());
-
-            while (stream.available() != 0)
-                outputStream.write(stream.read());
+            outputStream.write(content);
 
             outputStream.flush();
         } catch (IOException e) {

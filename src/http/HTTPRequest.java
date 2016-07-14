@@ -1,9 +1,8 @@
 package http;
 
-import java.net.InetAddress;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.UnknownHostException;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.net.*;
 import java.util.Arrays;
 
 /**
@@ -16,6 +15,7 @@ public class HTTPRequest {
     private String httpVersion;
     private InetAddress host;
     private int port;
+    private String content;
 
     public HTTPRequest(String[] contents) {
         this.lines = contents;
@@ -33,9 +33,18 @@ public class HTTPRequest {
             host = InetAddress.getByName(lines[1].split(" ")[1].split(":")[0]);
         } catch (UnknownHostException e) {
             e.printStackTrace();
-       }
+        }
 
         port = Integer.parseInt(lines[1].split(" ")[1].split(":")[1]);
+    }
+
+    public HTTPRequest(String requestType, URI requestUri, String httpVersion, InetAddress host, int port, String content) {
+        this.requestType = requestType;
+        this.requestUri = requestUri;
+        this.httpVersion = httpVersion;
+        this.host = host;
+        this.port = port;
+        this.content = content;
     }
 
     public HTTPRequest(String content) {
@@ -67,6 +76,29 @@ public class HTTPRequest {
 
         System.arraycopy(lines, 1, header, 0, i - 2);
         return header;
+    }
+
+    public String compose() {
+        final StringBuffer stringBuffer = new StringBuffer(requestType + " ");
+        stringBuffer.append(requestUri + " ");
+        stringBuffer.append(httpVersion + "\r\n");
+        stringBuffer.append("Host: " + host.getHostAddress() + ":" + port + "\r\n");
+        if (content != null) {
+            stringBuffer.append("\r\n");
+            stringBuffer.append(content);
+        }
+        return stringBuffer.toString();
+    }
+
+    public void send(Socket socket) {
+        try {
+            OutputStream outputStream = socket.getOutputStream();
+            outputStream.write(compose().getBytes());
+
+            outputStream.flush();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
