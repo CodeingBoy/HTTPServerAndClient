@@ -1,6 +1,7 @@
 package http;
 
-import java.io.*;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.net.Socket;
 
 /**
@@ -18,7 +19,7 @@ public class HTTPResponse {
         this.responseCode = responseCode;
         this.responseCodeDescription = responseCodeDescription;
         this.contentType = contentType;
-            this.content = content;
+        this.content = content;
     }
 
     // public static HTTPResponse parse(String content){

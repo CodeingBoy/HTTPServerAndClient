@@ -6,28 +6,31 @@ import http.HTTPResponse;
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Created by CodeingBoy on 2016-7-13-0013.
  */
-public class Server {
+public class AdvancedServer {
+    private static Map serveletCache = new HashMap();
     int port;
     ServerSocket serverSocket;
 
-    public Server(int port) {
+    public AdvancedServer(int port) {
         this.port = port;
     }
 
-    public Server() {
+    public AdvancedServer() {
         this(8080);
     }
 
     public static void main(String[] args) {
-        Server server;
+        AdvancedServer server;
         if (args.length > 0)
-            server = new Server(Integer.parseInt(args[0]));
+            server = new AdvancedServer(Integer.parseInt(args[0]));
         else
-            server = new Server();
+            server = new AdvancedServer();
 
         System.out.println("HTTP server running on " + server.getPort());
         System.out.println("Server have not started yet. Waiting for being started.");
@@ -70,25 +73,31 @@ public class Server {
 
                     HTTPResponse response = null;
                     FileInputStream requestRes = null;
-                    try {
-                        requestRes = new FileInputStream(new File("root" + request.getRequestUri()));
-                        byte[] content = new byte[requestRes.available()];
-                        requestRes.read(content);
-                        response = new HTTPResponse(request.getHttpVersion(), 200, "OK",
-                                "text/html", content);
-                    } catch (FileNotFoundException e) {
-                        try {
-                            FileInputStream inputStream = new FileInputStream(new File("root\\404.html"));
-                            byte[] content = new byte[inputStream.available()];
-                            inputStream.read(content);
-                            response = new HTTPResponse(request.getHttpVersion(), 404, "Not Found",
-                                    "text/html", content);
-                        } catch (FileNotFoundException e1) {
-                            e1.printStackTrace();
-                        } catch (IOException e2) {
-                            e2.printStackTrace();
-                        }
 
+                    if (request.getRequestUri().toString().indexOf("servlet") != -1) {
+                        response = new HTTPResponse(request.getHttpVersion(), 200, "OK",
+                                "text/html;charset=utf-8", handleServlet(request).getBytes());
+                    }else {
+                        try {
+                            requestRes = new FileInputStream(new File("root" + request.getRequestUri()));
+                            byte[] content = new byte[requestRes.available()];
+                            requestRes.read(content);
+                            response = new HTTPResponse(request.getHttpVersion(), 200, "OK",
+                                    "text/html", content);
+                        } catch (FileNotFoundException e) {
+                            try {
+                                FileInputStream inputStream = new FileInputStream(new File("root\\404.html"));
+                                byte[] content = new byte[inputStream.available()];
+                                inputStream.read(content);
+                                response = new HTTPResponse(request.getHttpVersion(), 404, "Not Found",
+                                        "text/html", content);
+                            } catch (FileNotFoundException e1) {
+                                e1.printStackTrace();
+                            } catch (IOException e2) {
+                                e2.printStackTrace();
+                            }
+
+                        }
                     }
                     showContent("response", response.toString());
                     response.send(requestSocket);
@@ -109,6 +118,40 @@ public class Server {
                 e.printStackTrace();
             }
         }
+    }
+
+    private String handleServlet(HTTPRequest request) {
+        String servletName = null;
+        final String requestURI = request.getRequestUri().toString();
+
+        if (requestURI.indexOf("?") != -1) {
+            servletName = requestURI.substring(requestURI.indexOf("servlet/") + 8, requestURI.indexOf("?"));
+        } else {
+            servletName = requestURI.substring(requestURI.indexOf("servlet/") + 8, requestURI.length());
+        }
+
+        Servlet servlet = (Servlet) serveletCache.get(servletName);
+
+        if (servlet == null) {
+            try {
+                servlet = (Servlet) Class.forName("server." + servletName).newInstance();
+            } catch (InstantiationException e) {
+                e.printStackTrace();
+            } catch (IllegalAccessException e) {
+                e.printStackTrace();
+            } catch (ClassNotFoundException e) {
+                e.printStackTrace();
+            }
+
+            try {
+                servlet.init();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            serveletCache.put(servletName, servlet);
+        }
+
+        return servlet.service(request);
     }
 
     public String getContent(Socket socket) {

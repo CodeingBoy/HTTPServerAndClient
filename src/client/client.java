@@ -27,7 +27,7 @@ public class client {
         } catch (MalformedURLException e) {
             e.printStackTrace();
         }
-        System.out.println(url);
+        System.out.println("Request URL: " + url);
 
         URI requestURI = null;
         try {
@@ -35,11 +35,11 @@ public class client {
         } catch (URISyntaxException e) {
             e.printStackTrace();
         }
-        System.out.println(requestURI);
+        System.out.println("Request URI: " + requestURI);
 
         Socket socket = null;
         try {
-            socket = new Socket(url.getHost(), url.getPort());
+            socket = new Socket(url.getHost(), url.getPort() == -1 ? 80 : url.getPort());
         } catch (UnknownHostException e) {
             e.printStackTrace();
         } catch (IOException e) {
