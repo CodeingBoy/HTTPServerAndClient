@@ -72,21 +72,18 @@ public class AdvancedServer {
                     }
 
                     HTTPResponse response = null;
-                    FileInputStream requestRes = null;
 
                     if (request.getRequestUri().toString().indexOf("servlet") != -1) {
                         response = new HTTPResponse(request.getHttpVersion(), 200, "OK",
                                 "text/html;charset=utf-8", handleServlet(request).getBytes());
-                    }else {
-                        try {
-                            requestRes = new FileInputStream(new File("root" + request.getRequestUri()));
+                    } else {
+                        try (FileInputStream requestRes = new FileInputStream(new File("root" + request.getRequestUri()))) {
                             byte[] content = new byte[requestRes.available()];
                             requestRes.read(content);
                             response = new HTTPResponse(request.getHttpVersion(), 200, "OK",
                                     "text/html", content);
                         } catch (FileNotFoundException e) {
-                            try {
-                                FileInputStream inputStream = new FileInputStream(new File("root\\404.html"));
+                            try (FileInputStream inputStream = new FileInputStream(new File("root\\404.html"))) {
                                 byte[] content = new byte[inputStream.available()];
                                 inputStream.read(content);
                                 response = new HTTPResponse(request.getHttpVersion(), 404, "Not Found",
